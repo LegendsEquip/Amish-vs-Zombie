@@ -627,6 +627,14 @@
       hint('<kbd>W</kbd>/<kbd>S</kbd> change gait &nbsp;·&nbsp; <kbd>A</kbd>/<kbd>D</kbd> steer &nbsp;·&nbsp; hold <kbd>Shift</kbd> to gallop &nbsp;·&nbsp; mouse to look — the mirrors work', 9);
     }
   }
+  /* back to the title screen, from the end screen or the pause screen */
+  function toMenu() {
+    if (locked) document.exitPointerLock();
+    reset();
+    $('end').className = 'screen'; $('pause').classList.remove('on'); $('intro').classList.remove('on');
+    setFirstPerson(false); setMode('menu'); document.body.classList.remove('playing');
+    $('menu').classList.add('on');
+  }
   function pause() { if (mode !== 'play') return; setMode('pause'); $('pause').classList.add('on'); if (locked) document.exitPointerLock(); }
   function resume() { if (mode !== 'pause') return; $('pause').classList.remove('on'); setMode('play'); lock(); }
   function gameOver(win, text) {
@@ -636,6 +644,7 @@
     A.sting(win);
     if (!win) { el.blood.style.opacity = 0.9; shake(1); }
     setTimeout(() => {
+      if (mode !== 'over') return;
       if (locked) document.exitPointerLock();
       const e = $('end'); e.className = 'screen on ' + (win ? 'win' : 'lose');
       $('end-t').textContent = win ? 'Safe Behind the Gate' : 'The Road Took You';
@@ -648,7 +657,7 @@
       document.body.classList.remove('playing');
     }, win ? 3200 : 2400);
   }
-  Game.debug = { start: startGame, state: () => st, over: gameOver, setTime: t => { st.time = t; }, mode: () => mode, give: k => Game.collect(k), step: (n, dt) => { for (let i = 0; i < n; i++) tick(dt || 1 / 30); }, look: (y, p) => { look.yaw = y; look.pitch = p; }, keys, attack: k => attack(k || st.cur), fp: setFirstPerson };
+  Game.debug = { menu: toMenu, start: startGame, state: () => st, over: gameOver, setTime: t => { st.time = t; }, mode: () => mode, give: k => Game.collect(k), step: (n, dt) => { for (let i = 0; i < n; i++) tick(dt || 1 / 30); }, look: (y, p) => { look.yaw = y; look.pitch = p; }, keys, attack: k => attack(k || st.cur), fp: setFirstPerson };
 
   /* ------------------------------------------------------------------ frame */
   let last = performance.now(), fpsAcc = 0, fpsN = 0;
@@ -730,6 +739,8 @@
     $('start').addEventListener('click', startGame);
     $('again').addEventListener('click', startGame);
     $('resume').addEventListener('click', resume);
+    $('tomenu').addEventListener('click', toMenu);
+    $('quit').addEventListener('click', toMenu);
     $('pause').addEventListener('click', e => { if (e.target.id === 'pause') resume(); });
     [...$('diff').children].forEach(b => b.addEventListener('click', () => { diffIdx = +b.dataset.d; [...$('diff').children].forEach(x => x.classList.toggle('on', x === b)); }));
     tryArt();

@@ -104,6 +104,8 @@
   .blurb { max-width:680px; font-size:17px; line-height:1.55; font-style:italic; margin:0 auto 18px; text-shadow:0 2px 6px #000; }
   .btn { pointer-events:auto; cursor:pointer; font-family:inherit; font-size:20px; letter-spacing:.3em; text-transform:uppercase; color:#1b1408; background:linear-gradient(#f0cd6a,#c8922a); border:1px solid #f6e3a0; border-radius:4px; padding:15px 46px 13px; box-shadow:0 6px 24px rgba(0,0,0,.6); transition:transform .12s, filter .12s; }
   .btn:hover { transform:translateY(-2px); filter:brightness(1.1); }
+  .btn.ghost { color:var(--parch); background:rgba(20,14,9,.75); border-color:var(--line); }
+  .btnrow { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
   .diff { display:flex; gap:8px; justify-content:center; margin:0 0 16px; }
   .diff button { pointer-events:auto; cursor:pointer; font-family:inherit; font-size:12px; letter-spacing:.2em; text-transform:uppercase; color:var(--parch); background:rgba(20,14,9,.7); border:1px solid var(--line); border-radius:4px; padding:8px 16px; }
   .diff button.on { border-color:var(--gold); color:var(--gold); box-shadow:0 0 12px rgba(217,169,58,.4); }
@@ -185,11 +187,11 @@
     </div>
   </div>
 </div>
-<div id="pause" class="screen"><h2>Whoa.</h2><p style="font-style:italic;font-size:18px;margin:0 0 22px">The dead are patient. Click to take up the reins.</p><button class="btn" id="resume">Resume</button></div>
+<div id="pause" class="screen"><h2>Whoa.</h2><p style="font-style:italic;font-size:18px;margin:0 0 22px">The dead are patient. Click to take up the reins.</p><div class="btnrow"><button class="btn" id="resume">Resume</button><button class="btn ghost" id="quit">Main menu</button></div></div>
 <div id="end" class="screen">
   <h2 id="end-t"></h2><p id="end-p"></p>
   <div id="stats"></div>
-  <button class="btn" id="again">Hitch up again</button>
+  <div class="btnrow"><button class="btn" id="again">Hitch up again</button><button class="btn ghost" id="tomenu">Main menu</button></div>
 </div>
 <div id="err"></div>
 
