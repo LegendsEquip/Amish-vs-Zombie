@@ -195,7 +195,8 @@
   const TH = 22;
   const REST = {
     whip: [0.3, -0.26, -0.52, 0.55, -0.25, 0.1], knife: [0.27, -0.24, -0.5, 0.5, 0.25, 0.25], shovel: [0.3, -0.34, -0.42, 0.75, 0.3, 0.1],
-    pitchfork: [0.28, -0.36, -0.4, 0.62, 0.22, 0.05], revolver: [0.2, -0.2, -0.52, 0.04, 0.06, 0], shotgun: [0.19, -0.22, -0.42, 0.03, 0.08, 0]
+    pitchfork: [0.28, -0.36, -0.4, 0.62, 0.22, 0.05], revolver: [0.2, -0.2, -0.52, 0.04, 0.06, 0], shotgun: [0.19, -0.22, -0.42, 0.03, 0.08, 0],
+    scythe: [0.32, -0.36, -0.36, 0.72, 0.35, 0.1], flamethrower: [0.2, -0.2, -0.36, 0.03, 0.08, 0]
   };
   function buildVM() {
     vm = new THREE.Group(); camera.add(vm);
@@ -205,7 +206,7 @@
       B.box(0.03, -0.07, 0.3, 0.1, 0.1, 0.46, 0x3a5a8a, -0.12, 0.2); B.box(0.008, -0.03, 0.09, 0.105, 0.085, 0.05, 0x34507a);
     }, G.matBatch, 0.02);
     vmPivot.add(arm);
-    for (const k of ['whip', 'knife', 'shovel', 'pitchfork', 'revolver', 'shotgun']) {
+    for (const k of ['whip', 'knife', 'shovel', 'pitchfork', 'revolver', 'shotgun', 'scythe', 'flamethrower']) {
       const m = part(B => G.models.weapon(B, k), G.matBatch, 0.03); m.visible = false; vmPivot.add(m); vmWeapons[k] = m;
     }
     // whip thong: camera-facing ribbon rebuilt every frame
@@ -225,6 +226,7 @@
   VM.attack = function (kind, targetWorld, dur) {
     VM.t = 0; VM.dur = dur;
     VM.hasTarget = !!targetWorld; if (targetWorld) VM.target.copy(targetWorld);
+    if (kind === 'flamethrower') { VM.kick = Math.max(VM.kick, 0.18); muzzleLight.intensity = 2.2; }
     if (kind === 'revolver' || kind === 'shotgun') { VM.kick = kind === 'shotgun' ? 1.6 : 1; VM.flash = 0.06; muzzleLight.intensity = kind === 'shotgun' ? 5 : 3; }
   };
   const _h = new THREE.Vector3(), _c1 = new THREE.Vector3(), _e = new THREE.Vector3(), _p = new THREE.Vector3(), _pp = new THREE.Vector3(), _tan = new THREE.Vector3(), _perp = new THREE.Vector3(), _tl = new THREE.Vector3(), _rest = new THREE.Vector3();
@@ -237,7 +239,7 @@
     let px = r[0] + Math.sin(time * 5.1) * bobA, py = r[1] + Math.sin(time * 10.2) * bobA - VM.swap * 0.9, pz = r[2], rx = r[3], ry = r[4], rz = r[5];
     if (t < 1) {
       if (k === 'knife') { pz -= sw * 0.32; px -= sw * 0.16; rx -= sw * 0.5; ry += sw * 0.9; }
-      else if (k === 'shovel') { const e = smooth(0.1, 0.7, t); ry += lerp(1.0, -1.3, e) * (t < 0.85 ? 1 : (1 - t) / 0.15); rx -= sw * 0.5; px -= sw * 0.2; pz -= sw * 0.25; py += sw * 0.1; }
+      else if (k === 'shovel' || k === 'scythe') { const e = smooth(0.1, 0.7, t); ry += lerp(1.0, -1.3, e) * (t < 0.85 ? 1 : (1 - t) / 0.15); rx -= sw * 0.5; px -= sw * 0.2; pz -= sw * 0.25; py += sw * 0.1; }
       else if (k === 'pitchfork') { pz -= Math.sin(PI * Math.pow(t, 0.6)) * 0.6; rx -= sw * 0.55; py += sw * 0.12; px -= sw * 0.12; }
       else if (k === 'whip') { const w = t < 0.3 ? smooth(0, 0.3, t) : 1 - smooth(0.3, 0.55, t) * 1.7 + smooth(0.6, 1, t) * 0.7; rx += w * 0.9; py += w * 0.1; pz -= (t > 0.3 && t < 0.7 ? 0.14 : 0); }
     }

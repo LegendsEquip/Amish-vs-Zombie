@@ -17,7 +17,7 @@
   const HAIR = [0x1a1410, 0x4a3420, 0x8a7a5a, 0x9a9a98, 0x6a2a14];
   const OUT = {
     tourist: { shirt: [0xe2574c, 0x3aa0c8, 0xe8c23a, 0x7ac86a, 0xe07ab0], pants: [0xb8a888, 0x8a8a6a], shorts: 1, hat: 'cap', hatCol: [0xf0f0f0, 0xc81e1e, 0x23406e], extra: 'camera', drop: ['apple', 'sugar', 'pie', 'carrot'] },
-    farmer: { shirt: [0xa83232, 0x3a6a4a, 0x8a6a3a], pants: [0x34507a], bib: 0x34507a, hat: 'brim', hatCol: [0xd8c078], prop: 'pitchfork', drop: ['pitchfork', 'pitchfork', 'oats', 'carrot'] },
+    farmer: { shirt: [0xa83232, 0x3a6a4a, 0x8a6a3a], pants: [0x34507a], bib: 0x34507a, hat: 'brim', hatCol: [0xd8c078], prop: 'pitchfork', drop: ['pitchfork', 'pitchfork', 'scythe', 'scythe', 'oats', 'carrot'] },
     hunter: { shirt: [0x5a6238, 0x4a5230], pants: [0x4a5a34, 0x5a5238], vest: [0xf06a14, 0xf06a14], hat: 'cap', hatCol: [0xf06a14], drop: ['shells', 'shells', 'shotgun', 'ammo'] },
     cop: { shirt: [0x1c2a4a], pants: [0x161c30], hat: 'cap', hatCol: [0x161c30], extra: 'badge', drop: ['ammo', 'ammo', 'revolver', 'revolver'] },
     worker: { shirt: [0x6a7078, 0x34507a, 0x7a5a3a], pants: [0x34507a, 0x5a5248], vest: [0xc8e020, 0xc8ccd0], hat: 'helmet', hatCol: [0xf0f0f0, 0xe8c020], prop: 'shovel', drop: ['shovel', 'shovel', 'pie'] },
@@ -27,7 +27,7 @@
     jogger: { shirt: [0x2ad0c0, 0xe040a0, 0xd0e020], pants: [0x15151a], shorts: 1, drop: ['apple', 'carrot', 'sugar'] },
     grocer: { shirt: [0xf0f0f0, 0xc8d8e8], pants: [0x2a2a30, 0x5a5248], apron: 0x2f7a3a, drop: ['apple', 'carrot', 'oats', 'oats'] },
     teen: { shirt: [0x5a2a6a, 0x2a2a30, 0x8a1f1f, 0x3a5a3a], pants: [0x34507a, 0x2a3a5a], drop: null },
-    fire: { shirt: [0x8a7a4a], pants: [0x6a5e3a], extra: 'firestripes', hat: 'helmet', hatCol: [0x8a1a1a, 0x15151a], drop: ['armor', 'blades', 'speed', 'shells'] }
+    fire: { shirt: [0x8a7a4a], pants: [0x6a5e3a], extra: 'firestripes', hat: 'helmet', hatCol: [0x8a1a1a, 0x15151a], drop: ['armor', 'blades', 'speed', 'shells', 'flamethrower', 'fuel'] }
   };
   const OUTFITS_FOR = {
     shambler: ['tourist', 'tourist', 'farmer', 'hunter', 'cop', 'worker', 'butcher', 'nurse', 'business', 'business', 'jogger', 'grocer', 'teen', 'teen'],
@@ -435,7 +435,7 @@
     if (z.dead) return false;
     z.hp -= amount; z.hitT = 0.14;
     const cy = z.y + (z.type === 'crawler' ? 0.35 : 1.25 * z.scale) + (z.slot >= 0 ? 0.3 : 0);
-    G.fx.blood(z.x, cy, z.z, cause === 'shotgun' ? 16 : 8, (dx || 0) * 4, (dz || 0) * 4, cause === 'whip' ? 0.7 : 1);
+    if (cause !== 'fire') G.fx.blood(z.x, cy, z.z, cause === 'shotgun' ? 16 : 8, (dx || 0) * 4, (dz || 0) * 4, cause === 'whip' ? 0.7 : 1);
     if (z.hp <= 0) { Z.kill(z, cause, dx, dz); return true; }
     if (z.slot < 0) {
       const res = z.type === 'brute' ? 0.25 : z.type === 'jugg' ? 0.08 : z.type === 'bloater' ? 0.5 : 1;
@@ -443,7 +443,7 @@
       if (z.state === 'idle') z.state = 'chase';
     }
     setBar(z);
-    G.audio.hit(cause);
+    if (cause !== 'fire') G.audio.hit(cause);
     return false;
   };
   Z.kill = function (z, cause, dx, dz) {
@@ -683,6 +683,13 @@
         continue;
       }
 
+      /* ---- on fire */
+      if (z.burn > 0) {
+        z.burn -= dt; z.hp -= 28 * dt;
+        if (Math.random() < dt * 24) { const h = Math.random(); G.fx.add.emit(z.x + (Math.random() - 0.5) * 0.4, z.y + (0.3 + Math.random() * 1.3) * z.scale, z.z + (Math.random() - 0.5) * 0.4, 0, 1.4 + Math.random() * 1.6, 0, 0.35 + Math.random() * 0.3, 0.55 * z.scale, 0.1, 1, 0.38 + h * 0.4, 0.06 + h * 0.1, 0.6, -1, 0.3); }
+        if (Math.random() < dt * 4) setBar(z);
+        if (z.hp <= 0) { Z.kill(z, 'fire', 0, 0); continue; }
+      }
       /* ---- clinging to the buggy */
       if (z.state === 'hang') {
         const sl = Bg.SLOTS[z.slot];

@@ -83,6 +83,7 @@
   };
   A.click = () => tone('square', 1700, 900, 0.03, 0.12);
   A.slice = () => nz(0.1, 'highpass', 5200, 2600, 1.2, 0.22);
+  A.flame = () => { nz(0.24, 'bandpass', 700, 380, 0.5, 0.26, 0, 0.04); nz(0.2, 'highpass', 3200, 2400, 0.4, 0.05, 0, 0.04); };
   A.hit = function (cause) {
     if (cause === 'whip') { nz(0.07, 'bandpass', 1900, 700, 1.4, 0.3); return; }
     nz(0.13, 'lowpass', 900, 200, 1, 0.42); tone('sine', 170, 62, 0.1, 0.3);

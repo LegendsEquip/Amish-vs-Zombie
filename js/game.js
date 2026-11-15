@@ -16,15 +16,17 @@
     shovel: { name: 'Shovel', dmg: 100, range: 3.7, assist: 0.25, cd: 0.68, delay: 0.2, anim: 0.5, uses: 22 },
     pitchfork: { name: 'Pitchfork', dmg: 155, range: 5.0, assist: 0.18, cd: 0.75, delay: 0.16, anim: 0.5, uses: 18 },
     revolver: { name: 'Revolver', dmg: 185, range: 95, assist: 0.045, cd: 0.42, delay: 0, anim: 0.25, gun: 1, ammo: 'ammo' },
-    shotgun: { name: 'Shotgun', dmg: 300, range: 32, assist: 0.2, cd: 0.95, delay: 0, anim: 0.4, gun: 1, ammo: 'shells' }
+    shotgun: { name: 'Shotgun', dmg: 300, range: 32, assist: 0.2, cd: 0.95, delay: 0, anim: 0.4, gun: 1, ammo: 'shells' },
+    scythe: { name: 'Scythe', dmg: 140, range: 4.7, assist: 0.3, cd: 0.8, delay: 0.22, anim: 0.55, uses: 20 },
+    flamethrower: { name: 'Flamethrower', label: 'Flamer', dmg: 26, range: 10, assist: 0.25, cd: 0.11, delay: 0, anim: 0.11, gun: 1, ammo: 'fuel', auto: 1 }
   };
-  const ORDER = ['whip', 'knife', 'shovel', 'pitchfork', 'revolver', 'shotgun'];
+  const ORDER = ['whip', 'knife', 'shovel', 'pitchfork', 'revolver', 'shotgun', 'scythe', 'flamethrower'];
   const GEAR_SPEED = [0, 2.7, 6.3, 9.6, 13.6];
-  const ITEM_NAME = { apple: 'Apple', carrot: 'Carrot', oats: 'Sack of oats', sugar: 'Sugar cubes', hay: 'Hay', pie: 'Shoofly pie', salve: 'Horse liniment', ammo: 'Revolver rounds', shells: 'Shotgun shells', knife: 'Butcher knife', shovel: 'Shovel', pitchfork: 'Pitchfork', revolver: 'Revolver', shotgun: 'Shotgun', armor: 'Steel plate', blades: 'Scythe blades', speed: 'Lucky horseshoe' };
+  const ITEM_NAME = { apple: 'Apple', carrot: 'Carrot', oats: 'Sack of oats', sugar: 'Sugar cubes', hay: 'Hay', pie: 'Shoofly pie', salve: 'Horse liniment', ammo: 'Revolver rounds', shells: 'Shotgun shells', knife: 'Butcher knife', shovel: 'Shovel', pitchfork: 'Pitchfork', revolver: 'Revolver', shotgun: 'Shotgun', armor: 'Steel plate', blades: 'Scythe blades', speed: 'Lucky horseshoe', scythe: 'Scythe', flamethrower: 'Flamethrower', fuel: 'Fuel can' };
   const TABLES = {
-    zombie: { apple: 20, carrot: 14, oats: 7, sugar: 6, pie: 11, salve: 7, ammo: 9, shells: 5, knife: 5, shovel: 4, pitchfork: 3, revolver: 3, shotgun: 1.5 },
-    wreck: { armor: 26, blades: 22, speed: 18, ammo: 10, shells: 8, knife: 4, shovel: 5, pitchfork: 2, revolver: 3, shotgun: 2 },
-    debris: { apple: 12, carrot: 9, oats: 8, pie: 10, ammo: 12, shells: 8, knife: 8, shovel: 7, armor: 9, blades: 8, speed: 7, salve: 6 },
+    zombie: { apple: 20, carrot: 14, oats: 7, sugar: 6, pie: 11, salve: 7, ammo: 9, shells: 5, knife: 5, shovel: 4, pitchfork: 3, revolver: 3, shotgun: 1.5, scythe: 2.5, fuel: 2 },
+    wreck: { armor: 26, blades: 22, speed: 18, ammo: 10, shells: 8, knife: 4, shovel: 5, pitchfork: 2, revolver: 3, shotgun: 2, flamethrower: 3, fuel: 7, scythe: 2 },
+    debris: { apple: 12, carrot: 9, oats: 8, pie: 10, ammo: 12, shells: 8, knife: 8, shovel: 7, armor: 9, blades: 8, speed: 7, salve: 6, scythe: 4, fuel: 6, flamethrower: 1.5 },
     hay: { hay: 1 }, food: { apple: 3, carrot: 2, sugar: 2 },
     body: { ammo: 20, pie: 15, knife: 10, apple: 15, salve: 10, shells: 10, revolver: 6, sugar: 14 },
     heavy: { armor: 3, blades: 3, speed: 3 }
@@ -55,7 +57,7 @@
     return {
       mode: 'menu', time: 0, realTime: 0, s: 22, lat: 1.75, latVel: 0, speed: 0, gear: 2, x: 0, y: 0, z: 0, yaw: 0, pitch: 0, vx: 0, vz: 0, hx: 0, hz: 0,
       hp: 100, horseHP: 100, stamina: 100, exhausted: false, armor: 0, blades: 0, speedLvl: 0, feed: 1, pies: 0, sugarT: 0,
-      uses: { knife: 0, shovel: 0, pitchfork: 0 }, have: { whip: true }, ammo: 0, shells: 0, cur: 'whip', atkCD: 0,
+      uses: { knife: 0, shovel: 0, pitchfork: 0, scythe: 0 }, have: { whip: true }, ammo: 0, shells: 0, fuel: 0, cur: 'whip', atkCD: 0,
       blocked: false, trampled: 0, scraped: 0, looted: 0, offroad: false, night: 0, diff: DIFFS[diffIdx],
       crashCD: 0, sideCD: 0, knockCD: 0, scrapeSnd: 0, swerveDir: 0, swerveT: 0, feedCD: 0, said: {}, sayCD: {}, startS: 22, god: params.has('god')
     };
@@ -80,6 +82,8 @@
     else if (kind === 'shovel') { g.lineWidth = 5; line(12, 62, 84, 30); line(8, 54, 18, 70); g.beginPath(); g.moveTo(80, 22); g.lineTo(104, 12); g.lineTo(120, 26); g.lineTo(96, 44); g.closePath(); g.fill(); }
     else if (kind === 'pitchfork') { g.lineWidth = 5; line(10, 66, 84, 32); g.lineWidth = 3; line(76, 22, 92, 44); for (let i = 0; i < 4; i++) line(77 + i * 5, 23 + i * 7, 108 + i * 4, 8 + i * 8); }
     else if (kind === 'revolver') { g.beginPath(); g.moveTo(26, 30); g.lineTo(110, 30); g.lineTo(110, 40); g.lineTo(66, 42); g.lineTo(58, 50); g.lineTo(46, 50); g.lineTo(40, 72); g.lineTo(24, 70); g.lineTo(30, 46); g.closePath(); g.fill(); g.clearRect(50, 33, 12, 7); }
+    else if (kind === 'scythe') { g.lineWidth = 5; line(12, 70, 96, 14); g.lineWidth = 4; line(40, 44, 50, 56); g.beginPath(); g.moveTo(96, 14); g.quadraticCurveTo(70, 2, 30, 14); g.quadraticCurveTo(70, 12, 92, 24); g.closePath(); g.fill(); }
+    else if (kind === 'flamethrower') { g.lineWidth = 7; line(14, 40, 78, 40); g.lineWidth = 11; line(22, 56, 56, 56); g.lineWidth = 4; line(30, 44, 26, 66); g.fillStyle = '#f0a030'; g.beginPath(); g.moveTo(80, 40); g.quadraticCurveTo(104, 18, 124, 36); g.quadraticCurveTo(106, 40, 122, 52); g.quadraticCurveTo(100, 62, 80, 40); g.fill(); }
     else if (kind === 'shotgun') { g.lineWidth = 4; line(34, 34, 122, 22); line(34, 40, 122, 28); g.beginPath(); g.moveTo(40, 32); g.lineTo(46, 44); g.lineTo(10, 66); g.lineTo(6, 52); g.closePath(); g.fill(); }
     return c;
   }
@@ -88,7 +92,7 @@
     ORDER.forEach((k, i) => {
       const d = document.createElement('div'); d.className = 'wslot';
       d.appendChild(icon(k));
-      d.insertAdjacentHTML('beforeend', `<span class="k">${i + 1}</span><span class="nm">${WEAPONS[k].name}</span><span class="n"></span>`);
+      d.insertAdjacentHTML('beforeend', `<span class="k">${i + 1}</span><span class="nm">${WEAPONS[k].label || WEAPONS[k].name}</span><span class="n"></span>`);
       host.appendChild(d); wslots[k] = { d, n: d.querySelector('.n') };
     });
   }
@@ -150,7 +154,7 @@
   const say = Game.say;
 
   /* ------------------------------------------------------------------ input */
-  const keys = {};
+  const keys = {}; let fireHeld = false;
   function onKey(code) {
     if (code === 'KeyM') { A.setMuted(!A.muted); toast(A.muted ? 'Sound off' : 'Sound on'); }
     if (mode === 'intro' && (code === 'Space' || code === 'Enter')) { introT = 99; return; }
@@ -187,8 +191,9 @@
   canvas.addEventListener('mousedown', e => {
     if (mode !== 'play') return;
     if (!locked && !useAbs) lock();   // try to capture the mouse, but never swallow the click
-    if (e.button === 0) attack(st.cur); else if (e.button === 2) attack('whip');
+    if (e.button === 0) { fireHeld = true; attack(st.cur); } else if (e.button === 2) attack('whip');
   });
+  window.addEventListener('mouseup', e => { if (e.button === 0) fireHeld = false; });
   window.addEventListener('contextmenu', e => e.preventDefault());
   window.addEventListener('wheel', e => { if (mode !== 'play') return; const have = ORDER.filter(k => st.have[k]); let i = have.indexOf(st.cur); i = (i + (e.deltaY > 0 ? 1 : -1) + have.length) % have.length; select(have[i]); }, { passive: true });
   // if the browser refuses to capture the mouse, fall back to aiming with the cursor position
@@ -234,7 +239,9 @@
       case 'salve': st.horseHP = Math.min(100, st.horseHP + 30); msg += ' <b>+30 Dolly</b>'; break;
       case 'ammo': st.ammo += 6; msg += ' <b>+6</b>'; break;
       case 'shells': st.shells += 4; msg += ' <b>+4</b>'; break;
-      case 'knife': case 'shovel': case 'pitchfork': st.have[kind] = true; st.uses[kind] += WEAPONS[kind].uses; if (st.cur === 'whip' && st.uses[kind] === WEAPONS[kind].uses) hint(`Picked up a <b>${ITEM_NAME[kind]}</b> — press <kbd>${ORDER.indexOf(kind) + 1}</kbd> to wield it. Right-click still cracks the whip.`, 6); break;
+      case 'fuel': st.fuel += 40; msg += ' <b>+40 fuel</b>'; break;
+      case 'flamethrower': if (!st.have.flamethrower) { st.have.flamethrower = true; say('gun'); hint('A <b>flamethrower</b> — press <kbd>8</kbd> and hold the button. Burning zombies keep burning.', 7); } st.fuel += 60; msg += ' <b>+60 fuel</b>'; break;
+      case 'knife': case 'shovel': case 'pitchfork': case 'scythe': st.have[kind] = true; st.uses[kind] += WEAPONS[kind].uses; if (st.cur === 'whip' && st.uses[kind] === WEAPONS[kind].uses) hint(`Picked up a <b>${ITEM_NAME[kind]}</b> — press <kbd>${ORDER.indexOf(kind) + 1}</kbd> to wield it. Right-click still cracks the whip.`, 6); break;
       case 'revolver': if (!st.have.revolver) { st.have.revolver = true; say('gun'); hint('A <b>revolver</b> — press <kbd>5</kbd>. Rounds are scarce.', 6); } st.ammo += 6; msg += ' <b>+6 rounds</b>'; break;
       case 'shotgun': if (!st.have.shotgun) { st.have.shotgun = true; say('gun'); hint('A <b>shotgun</b> — press <kbd>6</kbd>. Clears a whole road.', 6); } st.shells += 4; msg += ' <b>+4 shells</b>'; break;
       case 'armor': up('armor', 'Armor'); break;
@@ -309,13 +316,14 @@
     if (st.atkCD > 0 || !st.have[kind]) return;
     const Wp = WEAPONS[kind];
     if (kind !== st.cur) { st.cur = kind; Bg.vm.set(kind); refreshKit(); }
-    if (Wp.gun && st[Wp.ammo] <= 0) { A.click(); st.atkCD = 0.25; toast('Empty!', 'bad'); return; }
+    if (Wp.gun && st[Wp.ammo] <= 0) { st.atkCD = 0.25; if (!Wp.auto || realTime - (st.emptyT || 0) > 2) { st.emptyT = realTime; A.click(); toast(Wp.auto ? 'Out of fuel!' : 'Empty!', 'bad'); } return; }
     const target = Z.pick(eye, aim, Wp.range, Wp.assist), lootable = !Wp.gun && !target ? pickLootable(Wp.range) : null;
     let tp = null;
     if (target) tp = Z.aimPoint(target, _v2).clone(); else if (lootable) tp = new THREE.Vector3(lootable.x, lootable.y, lootable.z);
     Bg.vm.attack(kind, tp, Wp.anim);
     st.atkCD = Wp.cd;
     if (kind === 'whip') A.whipSwing(); else if (!Wp.gun) A.swing(kind !== 'knife');
+    if (Wp.auto) { resolve({ kind }); return; }
     pending.push({ kind, target, lootable, t: Wp.delay, tp });
   }
   function hitDir(z) { const dx = z.x - st.x, dz = z.z - st.z, d = Math.hypot(dx, dz) || 1; return [dx / d, dz / d]; }
@@ -335,6 +343,21 @@
       const z = p.target && !p.target.dead ? p.target : Z.pick(eye, aim, Wp.range, Wp.assist);
       if (z) { const [dx, dz] = hitDir(z); Z.damage(z, Wp.dmg, 'knife', dx, dz, 2); wear('knife'); }
       else if (p.lootable) lootObject(p.lootable);
+    } else if (p.kind === 'scythe') {
+      // a wide reaping stroke: everything in the arc
+      Z.inCone(eye, aim, Wp.range, 0.8, cone);
+      let n = 0; for (const c of cone) { if (n >= 5) break; const [dx, dz] = hitDir(c.z); Z.damage(c.z, Wp.dmg * (n ? 0.8 : 1), 'scythe', dx, dz, 6); n++; }
+      if (n) { wear('scythe'); shake(0.15); A.slice(); } else if (p.lootable) lootObject(p.lootable);
+    } else if (p.kind === 'flamethrower') {
+      st.fuel--; A.flame(); if (st.fuel % 5 === 0 || st.fuel < 10) refreshKit();
+      const rxv = Math.cos(st.yaw + look.yaw), rzv = -Math.sin(st.yaw + look.yaw);
+      for (let i = 0; i < 5; i++) {
+        const sp = 13 + Math.random() * 9, jx = (Math.random() - 0.5) * 0.26, jy = (Math.random() - 0.5) * 0.2, jz = (Math.random() - 0.5) * 0.26, h = Math.random();
+        FX.add.emit(eye.x + aim.x * 0.9 + rxv * 0.22, eye.y + aim.y * 0.9 - 0.22, eye.z + aim.z * 0.9 + rzv * 0.22, (aim.x + jx) * sp + st.vx, (aim.y + jy) * sp + 0.8, (aim.z + jz) * sp + st.vz, 0.34 + Math.random() * 0.24, 0.22, 1.5 + Math.random(), 1.0, 0.38 + h * 0.42, 0.05 + h * 0.12, 0.55, -2.5, 1.6);
+      }
+      if (Math.random() < 0.35) FX.smokePuff(eye.x + aim.x * 7, eye.y + aim.y * 7, eye.z + aim.z * 7, 1, true);
+      Z.inCone(eye, aim, Wp.range, 0.26, cone);
+      for (const c of cone) { const [dx, dz] = hitDir(c.z); c.z.burn = 3.5; Z.damage(c.z, Wp.dmg * clamp(1.1 - c.d / 13, 0.3, 1), 'fire', dx, dz, 0.6); }
     } else if (p.kind === 'shovel' || p.kind === 'pitchfork') {
       const sh = p.kind === 'shovel';
       Z.inCone(eye, aim, Wp.range, sh ? 0.55 : 0.2, cone);
@@ -584,7 +607,7 @@
     A.init();
     reset();
     if (params.has('t')) st.time = +params.get('t');
-    if (params.has('kit')) { for (const k of ORDER) st.have[k] = true; st.uses = { knife: 30, shovel: 22, pitchfork: 18 }; st.ammo = 60; st.shells = 40; st.feed = 9; st.pies = 5; refreshKit(); }
+    if (params.has('kit')) { for (const k of ORDER) st.have[k] = true; st.uses = { knife: 30, shovel: 22, pitchfork: 18, scythe: 20 }; st.fuel = 200; st.ammo = 60; st.shells = 40; st.feed = 9; st.pies = 5; refreshKit(); }
     $('menu').classList.remove('on'); $('end').classList.remove('on');
     el.fade.style.opacity = 1;
     setFirstPerson(false);
@@ -659,6 +682,7 @@
       Z.update(sdt, st);
       if (mode === 'play') {
         st.atkCD -= sdt;
+        if ((fireHeld || keys.KeyF) && WEAPONS[st.cur].auto) attack(st.cur);   // hold to keep the flame going
         for (let i = pending.length - 1; i >= 0; i--) { pending[i].t -= sdt; if (pending[i].t <= 0) { const p = pending[i]; pending.splice(i, 1); resolve(p); } }
         collisions(sdt); triggers(sdt);
       }

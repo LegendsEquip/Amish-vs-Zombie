@@ -25,7 +25,7 @@ To run it from a downloaded copy on Windows, double-click **Play.bat** (starts a
 | Mouse | look and aim — you can turn right round and look out the back window |
 | Left click or `F` | use the selected weapon |
 | `1` or right click | crack the whip (whatever else you are holding) |
-| `2`–`6` / wheel | draw knife, shovel, pitchfork, revolver, shotgun — press the number again to use it |
+| `2`–`8` / wheel | draw knife, shovel, pitchfork, revolver, shotgun, scythe, flamethrower — press the number again to use it (hold for the flamethrower) |
 | `E` | feed the horse (stamina) |
 | `Q` | eat a shoofly pie (repairs the buggy) |
 | `V` | chase camera |
