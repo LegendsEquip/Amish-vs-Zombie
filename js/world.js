@@ -168,7 +168,7 @@
     }, { repeat: false });
   }
 
-  let matRoad, matGround, matWater, matSign, sparkTex, matSpark;
+  let matRoad, matGround, matWater, matSign, sparkTex, matSpark, matHeal;
   W.init = function (scene) {
     W.scene = scene;
     matRoad = new THREE.MeshLambertMaterial({ map: roadTexture(), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -6 });
@@ -181,6 +181,7 @@
       g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
       g.strokeStyle = 'rgba(255,250,220,0.95)'; g.lineWidth = 2; g.beginPath(); g.moveTo(32, 2); g.lineTo(32, 62); g.moveTo(2, 32); g.lineTo(62, 32); g.stroke();
     }, { repeat: false });
+    matHeal = new THREE.SpriteMaterial({ map: G.glowTex('rgba(200,255,210,1)', 'rgba(60,230,110,0.5)'), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, fog: true });
     matSpark = W.matSpark = new THREE.SpriteMaterial({ map: sparkTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, fog: true });
   };
 
@@ -476,6 +477,13 @@
     haybale(B) { B.cyl(0, 0.72, 0, 0.75, 0.75, 1.4, 0xcdaa58, 12, 0, 0, PI / 2); B.cyl(0, 0.72, 0, 0.3, 0.3, 1.42, 0xb8944a, 8, 0, 0, PI / 2); return { r: 0.85, cls: 'break', h: 1.4, loot: 0.8, table: 'hay', puff: 0xcdaa58 }; },
     log(B, r) { B.cyl(0, 0.34, 0, 0.3, 0.36, 4.6, 0x4f3d2b, 9, 0, 0, PI / 2); for (let i = 0; i < 4; i++) { const px = (r() - 0.5) * 3.6; B.beam(px, 0.4, 0, px + (r() - 0.5), 1.1 + r(), (r() - 0.5) * 1.6, 0.08, 0.08, 0x4f3d2b); B.blob(px + (r() - 0.5) * 0.6, 1.0 + r() * 0.6, (r() - 0.5) * 1.2, 0.6, 0.45, 0.6, r.pick(AUTUMN), r() * 3); } return { r: 0.5, cls: 'solid', h: 0.7, wide: 1.8 }; },
     pumpkins(B, r) { for (let i = 0; i < 6; i++) pumpkinLocal(B, (r() - 0.5) * 1.4, 0, (r() - 0.5) * 1.4, 0.2 + r() * 0.14, r); B.box(0.2, 0.25, 0.2, 0.9, 0.5, 0.6, 0x8a6a42, 0.5, 0, 1.2); return { r: 0.75, cls: 'bump', h: 0.45, loot: 0.55, table: 'food', puff: 0xe0781e }; },
+    // buggy repair kit: a white crate with a red cross and a toolbox on top. Drive over it.
+    repair(B) {
+      B.box(0, 0.3, 0, 0.74, 0.6, 0.74, 0xf2efe6); for (const s of [-1, 1]) { B.box(0, 0.3 + s * 0.26, 0, 0.78, 0.07, 0.78, 0xb8b2a2); B.box(s * 0.37, 0.3, 0, 0.012, 0.3, 0.1, 0xc81e1e); B.box(s * 0.37, 0.3, 0, 0.012, 0.1, 0.3, 0xc81e1e); B.box(0, 0.3, s * 0.37, 0.1, 0.3, 0.012, 0xc81e1e); B.box(0, 0.3, s * 0.37, 0.3, 0.1, 0.012, 0xc81e1e); }
+      B.box(0, 0.605, 0, 0.14, 0.012, 0.42, 0xc81e1e); B.box(0, 0.605, 0, 0.42, 0.012, 0.14, 0xc81e1e);
+      B.box(0.18, 0.68, -0.18, 0.3, 0.14, 0.16, 0xb8322a, 0.5); B.box(0.18, 0.77, -0.18, 0.16, 0.03, 0.03, 0x33363a, 0.5);
+      return { r: 0.62, cls: 'heal', h: 0.7, heal: 20, puff: 0xf2efe6 };
+    },
     corpse(B, r) { const c = r.pick([0x23406e, 0x5a4a3a, 0x8a1f1f, 0x2f5d3a]); B.box(0, 0.14, 0, 0.5, 0.26, 0.75, c, 0.3); B.box(0.05, 0.12, 0.75, 0.36, 0.2, 0.85, 0x2a2a30, 0.2); B.box(-0.1, 0.13, -0.55, 0.24, 0.24, 0.24, 0x9a8a78); B.box(0.45, 0.08, -0.2, 0.14, 0.12, 0.6, 0x9a8a78, 0.9); return { r: 0.5, cls: 'none', h: 0.3, loot: 0.45, table: 'body' }; }
   };
   function crateAt(B, x, y, z, sz, r) {
@@ -498,6 +506,7 @@
     }
     if (p.loot) { p.chance = p.loot; p.table = p.table || 'debris'; p.y = y + (p.h || 0.6) * 0.6; ch.lootables.push(p); }
     if (p.fire) ch.fires.push({ x, y: y + 1.0, z, size: p.fire, prop: p });
+    if (p.heal) { const sp = new THREE.Sprite(matHeal); sp.position.set(x, y + 1.25, z); sp.scale.setScalar(1.5); ch.group.add(sp); p.glow = sp; }
     const half = (p.wide ? p.wide + p.r : p.r) + 0.1;
     return { s, lo: lat - half, hi: lat + half, solid: p.cls === 'solid' };
   }
@@ -778,6 +787,12 @@
       }
     }
     // loose debris
+    // repair crates: a little more common as the road gets worse
+    if (rng() < 0.24 + 0.2 * d) {
+      const s = s0 + 5 + rng() * 40, lim = Math.min(W.latLimit(s, -1), W.latLimit(s, 1)) - 1.2, lat = clamp(rng.range(-4.2, 4.2), -lim, lim);
+      let clash = false; for (const o of solids) if (Math.abs(o.s - s) < 5 && lat > o.lo - 1.2 && lat < o.hi + 1.2) clash = true;
+      if (!clash) placeProp(ch, rng, 'repair', s, lat, rng() * 0.6);
+    }
     const nd = Math.floor(rng() * (1.8 + 3.4 * d));
     const dk = ['cone', 'tire', 'tire', 'tirestack', 'crate', 'crates', 'barrel', 'barrel', 'luggage', 'luggage', 'haybale', 'pumpkins', 'corpse', 'corpse', 'barricade', 'firebarrel', 'log'];
     for (let k = 0; k < nd; k++) {
@@ -835,7 +850,7 @@
     let built = 0;
     for (let ci = Math.max(lo, -4); ci <= hi; ci++) if (!W.chunks.has(ci)) { W.chunks.set(ci, buildChunk(ci)); if (!sync && ++built >= 1) break; }
     const pulse = 0.55 + 0.45 * Math.sin(performance.now() * 0.005);
-    matSpark.opacity = pulse; matSpark.rotation = performance.now() * 0.0006;
+    matSpark.opacity = pulse; matSpark.rotation = performance.now() * 0.0006; matHeal.opacity = 0.45 + 0.4 * pulse;
   };
   /* iterate things near s */
   W.each = function (key, s, range, fn) {

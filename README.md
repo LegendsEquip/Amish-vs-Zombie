@@ -43,6 +43,8 @@ To run it from a downloaded copy on Windows, double-click **Play.bat** (starts a
   a bump, or turn round and hit them.
 - **Wrecks and debris** that glint can be whipped as you pass for armor plate, scythe
   blades and speed parts. Each has five levels and shows on the buggy.
+- **Repair crates**: white crates with a red cross and a green glow. Drive over one to repair
+  the buggy by 20.
 - **What a zombie wore decides what it drops**: the farmer has a pitchfork, the road
   worker a shovel, the butcher a knife, the policeman a revolver, the hunter a shotgun.
 - The run goes from late afternoon through sunset to a storm under a red moon.

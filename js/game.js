@@ -436,13 +436,26 @@
         const lz = oz - lf, d = Math.hypot(ox, lz), gap = d - (cr + o.r);
         if (gap >= 0) {
           // a close shave is what scrapes the passengers off
-          if (!isHorse && gap < 0.55 && Math.abs(lz) < 1.1 && o.cls !== 'bump' && st.speed > 2.5 && st.knockCD <= 0) {
+          if (!isHorse && gap < 0.55 && Math.abs(lz) < 1.1 && o.cls !== 'bump' && o.cls !== 'heal' && st.speed > 2.5 && st.knockCD <= 0) {
             const side = ox < 0 ? -1 : 1;
             if (Z.hangers(side) > 0) { const n = Z.knockOff(side, 2, 'scrape'); if (n) { st.knockCD = 0.25; st.scraped += n; say('scraped'); shake(0.3); A.scrape(side * 0.7); FX.sparks(st.x + rx * side, st.y + 1, st.z + rz * side, 8, st.vx * 0.3, st.vz * 0.3); } }
           }
           continue;
         }
         const side = ox < 0 ? -1 : 1, pr = o.prop;
+        if (o.cls === 'heal') {
+          // repair crate: smash through it and patch the buggy up
+          o.dead = true; W.removeObstaclesOf(pr);
+          if (pr.alive) {
+            pr.alive = false; pr.mesh.visible = false; if (pr.glow) pr.glow.visible = false;
+            const before = st.hp; st.hp = Math.min(100, st.hp + pr.heal); st.repairs = (st.repairs || 0) + 1;
+            FX.chunks(pr.x, pr.gy + 0.4, pr.z, 16, 0xf2efe6, 0.8); FX.flash(pr.x, pr.gy + 0.8, pr.z, 3, 0.4, 1, 0.5);
+            A.woodBreak(); A.pickup(true); Bg.jolt += 0.8;
+            toast('Repair crate <b>+' + Math.round(st.hp - before) + ' buggy</b>', 'up');
+            if (!st.said.repairhint) { st.said.repairhint = 1; hint('White crates with a red cross repair the buggy — just drive over them', 6); }
+          }
+          return;
+        }
         if (o.cls === 'bump' || o.cls === 'break') {
           // run it down
           const brk = o.cls === 'break';
