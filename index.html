@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One Horsepower</title>
+<style>
+  :root { --parch:#eadfc4; --gold:#d9a93a; --blood:#b3261e; --ink:#17120d; --panel:rgba(20,14,9,.62); --line:rgba(234,223,196,.22); }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; background:#000; overflow:hidden; color:var(--parch); font-family: Georgia, 'Times New Roman', serif; user-select:none; -webkit-user-select:none; }
+  canvas#gl { position:fixed; inset:0; width:100%; height:100%; display:block; }
+  .layer { position:fixed; inset:0; pointer-events:none; }
+  #vignette { background: radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 52%, rgba(0,0,0,.5) 100%); }
+  #hurt { background: radial-gradient(ellipse at 50% 50%, rgba(140,0,0,0) 40%, rgba(150,8,8,.85) 100%); opacity:0; }
+  #low { box-shadow: inset 0 0 180px 40px rgba(160,10,10,.55); opacity:0; transition:opacity .4s; }
+  #grain { opacity:.07; mix-blend-mode:overlay; background-size:256px 256px; animation: grain .5s steps(4) infinite; }
+  @keyframes grain { 0%{background-position:0 0} 25%{background-position:-90px 40px} 50%{background-position:60px -110px} 75%{background-position:-30px -60px} 100%{background-position:0 0} }
+  #fade { background:#000; opacity:1; transition: opacity 1.4s ease; }
+  #flashw { background:#fff; opacity:0; }
+  #blood { opacity:0; transition: opacity 2.5s; }
+  .bar-letter { position:fixed; left:0; right:0; height:0; background:#000; transition:height .9s ease; pointer-events:none; }
+  #lbt { top:0 } #lbb { bottom:0 }
+  body.cine .bar-letter { height:11vh; }
+
+  /* ---------- HUD ---------- */
+  #hud { opacity:0; transition:opacity .6s; text-shadow:0 1px 2px rgba(0,0,0,.9); }
+  body.playing #hud { opacity:1; }
+  body.cine #hud { opacity:0; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:6px; backdrop-filter: blur(3px); }
+  #vitals { position:absolute; left:22px; top:20px; width:300px; padding:12px 14px 10px; }
+  .vrow { display:grid; grid-template-columns:74px 1fr 34px; align-items:center; gap:8px; margin-bottom:7px; font-size:12px; letter-spacing:.12em; text-transform:uppercase; }
+  .vrow b { font-weight:normal; text-align:right; font-variant-numeric:tabular-nums; }
+  .bar { height:11px; background:rgba(0,0,0,.55); border:1px solid rgba(234,223,196,.25); border-radius:2px; overflow:hidden; position:relative; }
+  .bar i { display:block; height:100%; width:100%; transform-origin:left; transition:transform .15s linear; }
+  #b-hp i { background:linear-gradient(#d2473c,#8e1c16); } #b-horse i { background:linear-gradient(#b98652,#7a4f2a); } #b-stam i { background:linear-gradient(#ecc65a,#b88a22); }
+  #b-stam.out i { background:linear-gradient(#7a7a7a,#444); }
+  #b-stam.rush i { background:linear-gradient(#fff,#f3d9ff); }
+  #gait { display:flex; gap:4px; margin-top:9px; }
+  #gait span { flex:1; text-align:center; font-size:10px; letter-spacing:.1em; padding:4px 0 3px; border:1px solid var(--line); border-radius:3px; color:rgba(234,223,196,.45); }
+  #gait span.on { background:var(--gold); color:#1b1408; border-color:var(--gold); text-shadow:none; font-weight:bold; }
+  #gait span.on.g4 { background:#e9632e; border-color:#e9632e; }
+  #speed { font-size:11px; letter-spacing:.14em; opacity:.7; margin-top:6px; text-align:right; }
+
+  #clock { position:absolute; left:50%; top:16px; transform:translateX(-50%); text-align:center; padding:8px 22px 10px; min-width:330px; }
+  #clock small { display:block; font-size:10px; letter-spacing:.34em; opacity:.75; }
+  #time { font-size:40px; line-height:1; font-variant-numeric:tabular-nums; letter-spacing:.04em; }
+  #daybar { position:relative; height:6px; margin-top:8px; border-radius:3px; background:linear-gradient(90deg,#7fb4e6 0%,#f0c070 38%,#e8703a 52%,#4a2f5e 62%,#0c1024 76%,#3a0c10 100%); }
+  #daydot { position:absolute; top:-4px; width:14px; height:14px; margin-left:-7px; border-radius:50%; background:#fff3c8; box-shadow:0 0 10px 3px rgba(255,220,140,.8); }
+
+  #right { position:absolute; right:22px; top:20px; width:230px; padding:11px 14px; text-align:right; }
+  #right .lbl { font-size:10px; letter-spacing:.3em; opacity:.7; }
+  #kills { font-size:30px; line-height:1.05; font-variant-numeric:tabular-nums; }
+  #horde { margin-top:10px; display:none; }
+  #horde .hv { font-size:22px; font-variant-numeric:tabular-nums; }
+  #horde .bar i { background:linear-gradient(90deg,#8e1c16,#e9632e); transform-origin:right; }
+  #horde.near { color:#ff8f7a; animation:pulse .6s infinite alternate; }
+  @keyframes pulse { to { opacity:.6; } }
+
+  #kit { position:absolute; left:22px; bottom:20px; padding:10px 14px; width:300px; font-size:11px; letter-spacing:.14em; text-transform:uppercase; }
+  .urow { display:grid; grid-template-columns:74px 1fr; align-items:center; gap:8px; margin:4px 0; }
+  .pips { display:flex; gap:4px; } .pips i { flex:1; height:8px; border:1px solid rgba(234,223,196,.3); border-radius:2px; background:rgba(0,0,0,.4); }
+  .pips i.on { background:#9fb2c8; border-color:#c9d6e6; box-shadow:0 0 6px rgba(160,190,230,.6); }
+  #u-blades i.on { background:#d86a4a; border-color:#f0a488; box-shadow:0 0 6px rgba(240,120,90,.6); }
+  #u-speed i.on { background:#e2bd4c; border-color:#f4dc8c; box-shadow:0 0 6px rgba(240,200,90,.6); }
+  #bag { display:flex; gap:8px; margin-top:9px; }
+  #bag div { flex:1; border:1px solid var(--line); border-radius:4px; padding:5px 8px; display:flex; justify-content:space-between; align-items:center; }
+  kbd { font-family:inherit; font-size:10px; border:1px solid rgba(234,223,196,.5); border-radius:3px; padding:1px 5px; background:rgba(0,0,0,.4); }
+  #bag b { font-size:16px; font-weight:normal; }
+
+  #weapons { position:absolute; left:50%; bottom:18px; transform:translateX(-50%); display:flex; gap:7px; }
+  .wslot { width:74px; height:66px; position:relative; border:1px solid var(--line); border-radius:6px; background:var(--panel); opacity:.32; transition:all .15s; }
+  .wslot.have { opacity:.85; } .wslot.sel { opacity:1; border-color:var(--gold); box-shadow:0 0 14px rgba(217,169,58,.55), inset 0 0 12px rgba(217,169,58,.2); transform:translateY(-5px); }
+  .wslot canvas { position:absolute; left:5px; top:6px; width:64px; height:40px; }
+  .wslot .k { position:absolute; left:6px; top:3px; font-size:10px; opacity:.7; }
+  .wslot .n { position:absolute; right:6px; bottom:3px; font-size:12px; font-variant-numeric:tabular-nums; }
+  .wslot .nm { position:absolute; left:6px; bottom:4px; font-size:8.5px; letter-spacing:.12em; text-transform:uppercase; opacity:.8; }
+
+  #sub { position:absolute; left:50%; bottom:112px; transform:translateX(-50%); max-width:min(760px,80vw); text-align:center; font-size:21px; font-style:italic; line-height:1.3; padding:8px 20px; background:rgba(8,6,4,.55); border-radius:4px; opacity:0; transition:opacity .35s; }
+  #sub.on { opacity:1; }
+  #sub span { display:block; font-style:normal; font-size:10px; letter-spacing:.3em; color:var(--gold); margin-bottom:2px; }
+  #toasts { position:absolute; right:22px; top:190px; width:270px; display:flex; flex-direction:column; gap:6px; align-items:flex-end; }
+  .toast { padding:7px 12px; background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--gold); border-radius:4px; font-size:13px; animation:tin .25s ease, tout .5s ease 2.6s forwards; }
+  .toast.up { border-left-color:#8fb4ff; } .toast.bad { border-left-color:var(--blood); } .toast b { color:var(--gold); font-weight:normal; }
+  @keyframes tin { from { transform:translateX(30px); opacity:0; } } @keyframes tout { to { opacity:0; transform:translateX(30px); } }
+  .warn { position:absolute; padding:10px 16px; background:rgba(120,12,8,.82); border:1px solid #ff9a86; border-radius:6px; font-size:13px; letter-spacing:.16em; text-transform:uppercase; display:none; animation:pulse .45s infinite alternate; text-align:center; }
+  .warn small { display:block; font-size:10px; letter-spacing:.08em; text-transform:none; opacity:.9; margin-top:2px; }
+  #w-l { left:22px; top:46%; } #w-r { right:22px; top:46%; } #w-b { left:50%; transform:translateX(-50%); bottom:196px; }
+  #cross { position:absolute; left:50%; top:50%; width:26px; height:26px; margin:-13px 0 0 -13px; opacity:.85; }
+  #cross::before, #cross::after { content:''; position:absolute; background:var(--parch); box-shadow:0 0 2px #000; }
+  #cross::before { left:12px; top:4px; width:2px; height:18px; } #cross::after { top:12px; left:4px; height:2px; width:18px; }
+  #cross.z::before, #cross.z::after { background:#ff4a38; } #cross.z { transform:scale(1.25) rotate(45deg); }
+  #cross.l::before, #cross.l::after { background:#ffd34a; } #cross.l { transform:scale(1.25); }
+  #hint { position:absolute; left:50%; top:118px; transform:translateX(-50%); font-size:13px; letter-spacing:.1em; padding:8px 16px; opacity:0; transition:opacity .5s; text-align:center; line-height:1.7; }
+  #hint.on { opacity:1; }
+
+  /* ---------- screens ---------- */
+  .screen { position:fixed; inset:0; display:none; align-items:center; justify-content:center; flex-direction:column; text-align:center; pointer-events:auto; }
+  .screen.on { display:flex; }
+  #menu { background:linear-gradient(180deg, rgba(8,5,3,.5) 0%, rgba(8,5,3,.05) 30%, rgba(8,5,3,.1) 55%, rgba(8,5,3,.86) 100%); justify-content:space-between; padding:5vh 4vw 4vh; }
+  #menu.art { background:linear-gradient(180deg, rgba(8,5,3,.45) 0%, rgba(8,5,3,.0) 34%, rgba(8,5,3,.2) 58%, rgba(8,5,3,.92) 100%), var(--art) center/cover no-repeat; }
+  h1 { font-size:clamp(54px,9.5vw,150px); margin:0; line-height:.9; letter-spacing:.02em; font-weight:normal; color:#f4ead2; text-shadow:0 4px 0 #3a1408, 0 8px 30px rgba(0,0,0,.8); font-variant:small-caps; }
+  h1 em { font-style:normal; color:var(--gold); }
+  .tag { font-size:clamp(13px,1.5vw,19px); letter-spacing:.42em; text-transform:uppercase; margin-top:14px; opacity:.92; text-shadow:0 2px 8px #000; }
+  .blurb { max-width:680px; font-size:17px; line-height:1.55; font-style:italic; margin:0 auto 18px; text-shadow:0 2px 6px #000; }
+  .btn { pointer-events:auto; cursor:pointer; font-family:inherit; font-size:20px; letter-spacing:.3em; text-transform:uppercase; color:#1b1408; background:linear-gradient(#f0cd6a,#c8922a); border:1px solid #f6e3a0; border-radius:4px; padding:15px 46px 13px; box-shadow:0 6px 24px rgba(0,0,0,.6); transition:transform .12s, filter .12s; }
+  .btn:hover { transform:translateY(-2px); filter:brightness(1.1); }
+  .diff { display:flex; gap:8px; justify-content:center; margin:0 0 16px; }
+  .diff button { pointer-events:auto; cursor:pointer; font-family:inherit; font-size:12px; letter-spacing:.2em; text-transform:uppercase; color:var(--parch); background:rgba(20,14,9,.7); border:1px solid var(--line); border-radius:4px; padding:8px 16px; }
+  .diff button.on { border-color:var(--gold); color:var(--gold); box-shadow:0 0 12px rgba(217,169,58,.4); }
+  .diff button small { display:block; font-size:9px; letter-spacing:.06em; text-transform:none; opacity:.7; margin-top:2px; }
+  .keys { display:grid; grid-template-columns:repeat(4,auto); gap:6px 26px; font-size:12px; letter-spacing:.06em; margin-top:18px; opacity:.92; text-align:left; justify-content:center; }
+  .keys div { white-space:nowrap; } .keys kbd { margin-right:6px; }
+  #pause { background:rgba(6,4,3,.78); }
+  #end { background:radial-gradient(ellipse at 50% 48%, rgba(6,4,3,.74) 0%, rgba(6,4,3,.5) 55%, rgba(6,4,3,.2) 100%), var(--art, none) center/cover no-repeat, rgba(6,4,3,.6); }
+  #end h2, #end p { text-shadow:0 2px 14px #000, 0 0 40px #000; }
+  #end .panel { background:rgba(12,8,5,.8); }
+  #end h2, #pause h2 { font-size:clamp(40px,7vw,96px); margin:0 0 6px; font-weight:normal; font-variant:small-caps; letter-spacing:.04em; }
+  #end.win h2 { color:var(--gold); } #end.lose h2 { color:#d8463a; }
+  #end p { max-width:640px; font-size:18px; font-style:italic; line-height:1.5; margin:6px auto 20px; }
+  #stats { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:0 0 26px; }
+  #stats div { padding:12px 18px; min-width:130px; } #stats b { display:block; font-size:30px; font-weight:normal; color:var(--gold); font-variant-numeric:tabular-nums; } #stats span { font-size:10px; letter-spacing:.24em; text-transform:uppercase; opacity:.8; }
+  #intro { position:fixed; inset:0; display:none; align-items:center; justify-content:center; flex-direction:column; text-align:center; pointer-events:none; }
+  #intro.on { display:flex; }
+  #intro div { font-size:clamp(20px,2.6vw,34px); text-shadow:0 2px 12px #000, 0 0 30px #000; opacity:0; transition:opacity 1s; max-width:900px; line-height:1.4; position:absolute; padding:0 5vw; }
+  #intro div.on { opacity:1; } #intro small { display:block; font-size:.5em; letter-spacing:.4em; text-transform:uppercase; color:var(--gold); margin-bottom:8px; }
+  #err { position:fixed; left:10px; bottom:10px; font:12px monospace; color:#ff8; background:rgba(0,0,0,.7); padding:6px 10px; display:none; max-width:70vw; white-space:pre-wrap; z-index:99; }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div id="vignette" class="layer"></div>
+<div id="blood" class="layer"></div>
+<div id="hurt" class="layer"></div>
+<div id="low" class="layer"></div>
+<div id="grain" class="layer"></div>
+<div id="flashw" class="layer"></div>
+
+<div id="hud" class="layer">
+  <div id="vitals" class="panel">
+    <div class="vrow"><span>Buggy</span><div class="bar" id="b-hp"><i></i></div><b id="v-hp">100</b></div>
+    <div class="vrow"><span>Dolly</span><div class="bar" id="b-horse"><i></i></div><b id="v-horse">100</b></div>
+    <div class="vrow"><span>Stamina</span><div class="bar" id="b-stam"><i></i></div><b id="v-stam">100</b></div>
+    <div id="gait"><span>Back</span><span>Whoa</span><span>Walk</span><span>Trot</span><span>Canter</span><span>Gallop</span></div>
+    <div id="speed">0 mph</div>
+  </div>
+  <div id="clock" class="panel"><small>Survive until the bell</small><div id="time">10:00</div><div id="daybar"><div id="daydot"></div></div></div>
+  <div id="right" class="panel">
+    <div class="lbl">Laid to rest</div><div id="kills">0</div>
+    <div id="horde"><div class="lbl">The horde behind you</div><div class="hv"><span id="gap">230</span> yd</div><div class="bar"><i></i></div></div>
+  </div>
+  <div id="kit" class="panel">
+    <div class="urow"><span>Armor</span><div class="pips" id="u-armor"><i></i><i></i><i></i><i></i><i></i></div></div>
+    <div class="urow"><span>Blades</span><div class="pips" id="u-blades"><i></i><i></i><i></i><i></i><i></i></div></div>
+    <div class="urow"><span>Speed</span><div class="pips" id="u-speed"><i></i><i></i><i></i><i></i><i></i></div></div>
+    <div id="bag"><div><span><kbd>E</kbd> Feed</span><b id="n-feed">0</b></div><div><span><kbd>Q</kbd> Pie</span><b id="n-pie">0</b></div></div>
+  </div>
+  <div id="weapons"></div>
+  <div id="sub"><span>Jebediah</span><em id="subt"></em></div>
+  <div id="toasts"></div>
+  <div id="w-l" class="warn">◀ On your left<small>rub it off — fence, post or wreck</small></div>
+  <div id="w-r" class="warn">On your right ▶<small>rub it off — fence, post or wreck</small></div>
+  <div id="w-b" class="warn">▼ Hanging on the back<small>swerve hard, hit a bump, or turn and strike</small></div>
+  <div id="hint" class="panel"></div>
+  <div id="cross"></div>
+</div>
+
+<div id="lbt" class="bar-letter"></div><div id="lbb" class="bar-letter"></div>
+<div id="intro"><div><small>Lancaster County · Tuesday · 4:52 pm</small>Jebediah Stoltzfus is taking shoofly pies to his cousin's wedding supper.</div><div>He has no television. No radio. No telephone.</div><div>He has not heard the news.</div></div>
+<div id="fade" class="layer"></div>
+
+<div id="menu" class="screen on">
+  <div><h1>One <em>Horse</em>power</h1><div class="tag">An Amish road-survival story</div></div>
+  <div>
+    <p class="blurb">Ten minutes to the Stoltzfus farm. One horse, one whip, and an uncommon number of unwell English on the road.</p>
+    <div class="diff" id="diff">
+      <button data-d="0">Plain<small>a gentler evening</small></button>
+      <button data-d="1" class="on">Ordnung<small>as intended</small></button>
+      <button data-d="2">Wrath<small>God help you</small></button>
+    </div>
+    <button class="btn" id="start">Giddy up</button>
+    <div class="keys">
+      <div><kbd>W</kbd><kbd>S</kbd>faster / slower gait</div><div><kbd>A</kbd><kbd>D</kbd>steer</div><div><kbd>Mouse</kbd>look &amp; aim</div><div><kbd>Click</kbd>or <kbd>F</kbd> use weapon</div>
+      <div><kbd>1</kbd>or right-click: whip</div><div><kbd>2</kbd>–<kbd>6</kbd>draw, again to use</div><div><kbd>Shift</kbd>hold to gallop</div><div><kbd>Space</kbd>whoa, then <kbd>S</kbd> backs up</div>
+      <div><kbd>E</kbd>feed the horse</div><div><kbd>Q</kbd>eat a pie (heal)</div><div><kbd>V</kbd>chase camera</div><div><kbd>M</kbd>mute · <kbd>Esc</kbd>pause</div>
+    </div>
+  </div>
+</div>
+<div id="pause" class="screen"><h2>Whoa.</h2><p style="font-style:italic;font-size:18px;margin:0 0 22px">The dead are patient. Click to take up the reins.</p><button class="btn" id="resume">Resume</button></div>
+<div id="end" class="screen">
+  <h2 id="end-t"></h2><p id="end-p"></p>
+  <div id="stats"></div>
+  <button class="btn" id="again">Hitch up again</button>
+</div>
+<div id="err"></div>
+
+<script>
+  window.addEventListener('error', e => { const el = document.getElementById('err'); el.style.display = 'block'; el.textContent += (e.message || e) + ' @ ' + (e.filename || '').split('/').pop() + ':' + e.lineno + '\n'; });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.149.0/three.min.js"></script>
+<script>if (!window.THREE) document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"><\/script>');</script>
+<!-- loaders for the optional sculpted zombie models in assets/zombies -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/utils/SkeletonUtils.js"></script>
+<script src="js/util.js"></script>
+<script src="js/env.js"></script>
+<script src="js/world.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/buggy.js"></script>
+<script src="js/zombies.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
